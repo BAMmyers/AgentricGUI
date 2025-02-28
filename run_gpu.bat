@@ -1,4 +1,4 @@
-@echo off
+@echo
 :: Activate main virtual environment
 call venv\Scripts\activate.bat
 
