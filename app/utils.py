@@ -5,7 +5,50 @@ import packaging.version
 
 
 
+import logging
+
+# Create a logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# Create a file handler and a stream handler
+file_handler = logging.FileHandler('gemini_assistant.log')
+stream_handler = logging.StreamHandler()
+
+# Create a formatter and add it to the handlers
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+stream_handler.setFormatter(formatter)
+
+# Add the handlers to the logger
+logger.addHandler(file_handler)
+logger.addHandler(stream_handler)
+
 def call_gemini_assistant(prompt, node_graph=None):
+    try:
+        # ... existing code ...
+
+        # Log the response
+        logger.info(f'Response: {response_text}')
+
+        return response_text
+    except Exception as e:
+        # Log the error
+        logger.error(f'An error occurred: {e}')
+        return f'An unexpected error occurred: {e}'
+
+def check_for_updates(installation_id):
+    try:
+        # ... existing code ...
+
+        # Log the result
+        logger.info(f'Update check result: latest_version={latest_version}, update_url={update_url}, blacklisted={blacklisted}')
+
+        return latest_version, update_url, blacklisted
+    except Exception as e:
+        # Log the error
+        logger.error(f'An error occurred during update check: {e}')
+        return None, None, Falsedef call_gemini_assistant(prompt, node_graph=None):
     """
     Sends a prompt to the local Gemini proxy server, potentially with context
     from the node graph, and returns the response.
@@ -101,6 +144,8 @@ def call_gemini_assistant(prompt, node_graph=None):
             nodes = node_graph.all_nodes()
             node_names = [node.name() for node in nodes]
     response_text = "Nodes:\n" + '\n'.join(node_names)
+
+
 
 
 
