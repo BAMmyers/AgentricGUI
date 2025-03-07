@@ -1,9 +1,6 @@
 import sys
-import os
-import json
-import uuid
 from PyQt5.QtWidgets import QApplication
-from app.main_window import MainWindow
+from .app.main_window import MainWindow
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
