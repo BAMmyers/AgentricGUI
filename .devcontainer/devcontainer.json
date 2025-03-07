@@ -51,7 +51,8 @@
 	"customizations": {
 		"vscode": {
 			"extensions": [
-				"lxt.code-assistant-llm"
+				"lxt.code-assistant-llm",
+				"Blackboxapp.blackbox"
 			]
 		}
 	}
