@@ -1,5 +1,6 @@
 {
     "recommendations": [
-        "lxt.code-assistant-llm"
+        "lxt.code-assistant-llm",
+        "blackboxapp.blackbox"
     ]
 }
