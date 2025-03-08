@@ -2,6 +2,7 @@
     "recommendations": [
         "lxt.code-assistant-llm",
         "blackboxapp.blackbox",
-        "blackboxapp.blackboxagent"
+        "blackboxapp.blackboxagent",
+        "sixth.sixth-ai"
     ]
 }
