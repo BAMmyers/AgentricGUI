@@ -1,12 +1,12 @@
 import requests
 import json
 import re
-import packaging.version
 import logging
 
 # Create a logger
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)  # Change to DEBUG for more detailed logging
+logger.setLevel(logging.DEBUG)  # Set to DEBUG for detailed logging
+
 
 # Create a file handler and a stream handler
 file_handler = logging.FileHandler('gemini_assistant.log')
@@ -47,10 +47,9 @@ def call_gemini_assistant(prompt, node_graph=None):
                     properties_formatted = "\n".join(
                         f"  {key}: {value}" for key, value in properties.items()
                     )
-                    response_text = (
-                        f"Node '{node_name}' ({node.type_}) has the following properties:\n"
-                        f"{properties_formatted}"
-                    )
+response_text = (f"Node '{node_name}' ({node.type_}) has the following properties:\n"
+                  f"{properties_formatted}")  # Line length adjusted
+
                 else:
                     response_text = f"Error: No node found with name '{node_name}'."
 
@@ -64,48 +63,21 @@ def call_gemini_assistant(prompt, node_graph=None):
 
                 if node:
                     try:
-                        # Check if the property exists
                         if property_name not in node.properties():
-                            response_text = (
-                                f"Error: Node '{node_name}' does not have property "
-                                f"'{property_name}'."
-                            )
+                            response_text = (f"Error: Node '{node_name}' does not have property "
+                                              f"'{property_name}'.")
                         else:
-                            # Check data type, and convert string if necessary
                             current_value = node.get_property(property_name)
                             if isinstance(current_value, bool):
-                                if new_value.lower() == 'true':
-                                    new_value = True
-                                elif new_value.lower() == 'false':
-                                    new_value = False
-                                else:
-                                    response_text = (
-                                        f"Error: Invalid value '{new_value}' for boolean "
-                                        f"property '{property_name}'."
-                                    )
+                                new_value = new_value.lower() == 'true'
                             elif isinstance(current_value, int):
-                                try:
-                                    new_value = int(new_value)
-                                except ValueError:
-                                    response_text = (
-                                        f"Error: Invalid value '{new_value}' for integer "
-                                        f"property '{property_name}'."
-                                    )
+                                new_value = int(new_value)
                             elif isinstance(current_value, float):
-                                try:
-                                    new_value = float(new_value)
-                                except ValueError:
-                                    response_text = (
-                                        f"Error: Invalid value '{new_value}' for float "
-                                        f"property '{property_name}'."
-                                    )
+                                new_value = float(new_value)
 
-                            if response_text == "":
-                                node.set_property(property_name, new_value)
-                                response_text = (
-                                    f"Successfully changed property '{property_name}' of "
-                                    f"node '{node_name}' to '{new_value}'."
-                                )
+                            node.set_property(property_name, new_value)
+                            response_text = (f"Successfully changed property '{property_name}' of "
+                                             f"node '{node_name}' to '{new_value}'.")
                     except Exception as e:
                         response_text = f"Error changing property: {e}"
                 else:
@@ -118,7 +90,7 @@ def call_gemini_assistant(prompt, node_graph=None):
                 node_names = [node.name() for node in nodes]
                 response_text = "Nodes:\n" + '\n'.join(node_names)
 
-        if response_text != "":
+        if response_text:
             return response_text
 
         # --- Call Local Server ---
@@ -138,11 +110,9 @@ def call_gemini_assistant(prompt, node_graph=None):
 
         response_json = response.json()
 
-        # Check for gemini errors coming through server
-        if "error" in response_json:
-            return f"Error from Gemini API: {response_json['error']}"
+        if "error" in response_json:  # Check for gemini errors coming through server
+            return f"Error from Gemini API: {response_json['error']}"  # Error handling
 
-        # Get the text
         if 'candidates' in response_json and response_json['candidates']:
             if 'content' in response_json['candidates'][0] and response_json['candidates'][0]['content']['parts']:
                 return response_json['candidates'][0]['content']['parts'][0]['text']
@@ -152,55 +122,8 @@ def call_gemini_assistant(prompt, node_graph=None):
             return "Error: Could not find candidates in the response."
 
     except requests.exceptions.RequestException as e:
-        logger.error(f'Request Error: {e}')
-        return f"Request Error: {e}"
-    except (KeyError, IndexError) as e:
-        logger.error(f'Error parsing response: {e}')
-        return f"Error parsing response: {e}"
-    except json.JSONDecodeError as e:
-        logger.error(f'JSON Decode Error: {e}')
-        return f"JSON Decode Error: {e}"
-    except Exception as e:
-        logger.error(f'An unexpected error occurred: {e}')
-        return f"An unexpected error occurred: {e}"
-
-def check_for_updates(installation_id):
-    """
-    Checks for updates and for a kill switch activation.
-
-    Args:
-        installation_id: The unique installation ID.
-
-    Returns:
-        A tuple: (latest_version, update_url, blacklisted).
-        - latest_version: The latest version number (as a string), or None if an error occurred.
-        - update_url: The URL to download the update, or None.
-        - blacklisted: True if the installation is blacklisted, False otherwise.
-    """
-    update_url = "https://github.com/BAMmyers/AgentricGUI/releases"  # Replace with your actual update URL
-    blacklist_url = "https://raw.githubusercontent.com/BAMmyers/AgentricGUI/main/blacklist.txt"  # REPLACE with your blacklist URL
-    version_url = "https://raw.githubusercontent.com/BAMmyers/AgentricGUI/main/version.txt"  # REPLACE
-
-    try:
-        # Check for blacklist
-        blacklist_response = requests.get(blacklist_url)
-        blacklist_response.raise_for_status()
-        blacklist = installation_id in blacklist_response.text
-
-        # Check for updates
-        version_response = requests.get(version_url)
-        version_response.raise_for_status()
-        latest_version_str = version_response.text.strip()
-        latest_version = packaging.version.parse(latest_version_str)
-
-        logger.info(f'Update check result: latest_version={latest_version}, update_url={update_url}, blacklisted={blacklisted}')
-        return latest_version, update_url, blacklist
-
-    except requests.exceptions.RequestException as e:
         logger.error(f'Update/blacklist check error: {e}')  # Log the error
-        logger.debug('Checking for updates and blacklist status')  # Log the start of the update check
-
         return None, None, False
     except Exception as e:
-        logger.error(f'An unexpected error occurred during update/blacklist check: {e}')
+        logger.error(f'An unexpected error occurred: {e}')
         return None, None, False
