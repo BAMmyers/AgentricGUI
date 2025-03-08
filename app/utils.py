@@ -6,7 +6,7 @@ import logging
 
 # Create a logger
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)  # Change to DEBUG for more detailed logging
 
 # Create a file handler and a stream handler
 file_handler = logging.FileHandler('gemini_assistant.log')
@@ -133,7 +133,9 @@ def call_gemini_assistant(prompt, node_graph=None):
         }
 
         response = requests.post(url, headers=headers, data=json.dumps(data))
-        response.raise_for_status()
+        response.raise_for_status()  # Raise an exception for bad status codes
+        logger.info(f"API call successful: {url}")  # Log successful API call
+
         response_json = response.json()
 
         # Check for gemini errors coming through server
@@ -195,7 +197,9 @@ def check_for_updates(installation_id):
         return latest_version, update_url, blacklist
 
     except requests.exceptions.RequestException as e:
-        logger.error(f'Update/blacklist check error: {e}')
+        logger.error(f'Update/blacklist check error: {e}')  # Log the error
+        logger.debug('Checking for updates and blacklist status')  # Log the start of the update check
+
         return None, None, False
     except Exception as e:
         logger.error(f'An unexpected error occurred during update/blacklist check: {e}')

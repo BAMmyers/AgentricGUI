@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (QMainWindow, QTabWidget, QWidget, QVBoxLayout,
                              QLabel, QPushButton, QLineEdit, QFileDialog,
-                             QCheckBox, QFormLayout, QTextEdit, QDockWidget,
+                             QFormLayout, QTextEdit, QDockWidget,
                              QComboBox, QMessageBox)  # Added QMessageBox
 from PyQt5.QtCore import Qt
 from NodeGraphQt import NodeGraph, setup_context_menu
@@ -11,6 +11,7 @@ from app.utils import call_gemini_assistant, check_for_updates  # Import check_f
 import json
 import os
 import uuid  # Import the uuid module
+import sys  # Import sys for exit handling
 
 
 class MainWindow(QMainWindow):
@@ -65,7 +66,8 @@ class MainWindow(QMainWindow):
         # Experience Level Dropdown
         self.experience_level_combo = QComboBox()
         self.experience_level_combo.addItems(["Novice", "Moderate", "Expert"])
-        self.experience_level_combo.currentTextChanged.connect(self.update_ui_for_experience_level)  # Connect to a slot
+        self.experience_level_combo.currentTextChanged.connect(
+            self.update_ui_for_experience_level)  # Connect to a slot
         self.settings_tab_layout.addRow("Experience Level:", self.experience_level_combo)
 
         self.save_settings_button = QPushButton("Save Settings")
@@ -83,7 +85,6 @@ class MainWindow(QMainWindow):
         self.assistant_layout = QVBoxLayout(self.assistant_widget)
         self.assistant_dock.setWidget(self.assistant_widget)
 
-
         self.assistant_input = QTextEdit()
         self.assistant_input.setPlaceholderText("Ask the AI assistant...")
         self.assistant_layout.addWidget(self.assistant_input)
@@ -96,21 +97,19 @@ class MainWindow(QMainWindow):
         self.assistant_output.setReadOnly(True)  # Make the output read-only
         self.assistant_layout.addWidget(self.assistant_output)
 
-
         # --- Load settings on startup ---
         self.load_settings()
 
         # --- Check for updates and kill switch ---
         self.check_for_updates_and_kill_switch()
 
-
         self.update_ui_for_experience_level()
         # Initial Node setup (Example)
         self.setup_initial_nodes()
 
     def setup_initial_nodes(self):
-        agent_node = self.graph.create_node('agentric.AgentNode', name='MyAgent', pos=[0, 0])
-        api_node = self.graph.create_node('agentric.APINode', name='GeminiAPI', pos=[300, 0])
+        self.graph.create_node('agentric.AgentNode', name='MyAgent', pos=[0, 0])
+        self.graph.create_node('agentric.APINode', name='GeminiAPI', pos=[300, 0])
 
     def save_settings(self):
         settings = {
@@ -118,15 +117,19 @@ class MainWindow(QMainWindow):
             "experience_level": self.experience_level_combo.currentText(),
             "installation_id": self.installation_id  # Save the installation ID
         }
-        file_path, _ = QFileDialog.getSaveFileName(self, "Save Settings", os.path.join(".", "settings.json"), "JSON Files (*.json)")
+        file_path, _ = QFileDialog.getSaveFileName(self, "Save Settings",
+                                                    os.path.join(".", "settings.json"),
+                                                    "JSON Files (*.json)")
         if file_path:
             with open(file_path, 'w') as f:
                 json.dump(settings, f)
             print(f"Settings saved to {file_path}")
 
     def load_settings(self):
-        #  Load settings, and generate a unique ID if it doesn't exist
-        file_path, _ = QFileDialog.getOpenFileName(self, "Load Settings", os.path.join(".", "settings.json"), "JSON Files (*.json)")
+        # Load settings, and generate a unique ID if it doesn't exist
+        file_path, _ = QFileDialog.getOpenFileName(self, "Load Settings",
+                                                    os.path.join(".", "settings.json"),
+                                                    "JSON Files (*.json)")
         if file_path:
             try:
                 with open(file_path, 'r') as f:
@@ -139,17 +142,16 @@ class MainWindow(QMainWindow):
                 print(f"Settings loaded from {file_path}")
             except FileNotFoundError:
                 print("Settings file not found. Creating with defaults.")
-                self.installation_id = str(uuid.uuid4()) # Generate on first run
-                self.save_settings() # Save defaults
+                self.installation_id = str(uuid.uuid4())  # Generate on first run
+                self.save_settings()  # Save defaults
             except json.JSONDecodeError:
                 print("Invalid JSON format in settings file.")
-                self.installation_id = str(uuid.uuid4()) # Generate on error
+                self.installation_id = str(uuid.uuid4())  # Generate on error
                 self.save_settings()
 
-        else: #If no file selected, generate an ID
-             self.installation_id = str(uuid.uuid4())
-             self.save_settings()
-
+        else:  # If no file selected, generate an ID
+            self.installation_id = str(uuid.uuid4())
+            self.save_settings()
 
     def send_to_assistant(self):
         user_input = self.assistant_input.toPlainText()
@@ -160,8 +162,11 @@ class MainWindow(QMainWindow):
         self.assistant_input.clear()
 
         try:
-            response = call_gemini_assistant(user_input, self.api_key_input.text(), self.graph)
-            self.assistant_output.append(f"Assistant: {response}")
+            response = call_gemini_assistant(user_input, self.graph)
+            if not response:
+                self.assistant_output.append("Assistant: No response received.")
+            else:
+                self.assistant_output.append(f"Assistant: {response}")
         except Exception as e:
             self.assistant_output.append(f"Assistant: Error: {e}")
 
@@ -180,23 +185,23 @@ class MainWindow(QMainWindow):
         elif experience_level == "Moderate":
             self.setup_moderate_graph()
         else:  # Expert
-           self.setup_expert_graph()
+            self.setup_expert_graph()
 
     def setup_novice_graph(self):
         self.graph.clear()
-        agent_node = self.graph.create_node('agentric.AgentNode', name='MyAgent', pos=[0, 0])
-        agent_node.set_property('purpose', 'Respond to questions')
+        self.graph.create_node('agentric.AgentNode', name='MyAgent', pos=[0, 0]).set_property('purpose', 'Respond to questions')
 
     def setup_moderate_graph(self):
         self.graph.clear()
-        agent_node = self.graph.create_node('agentric.AgentNode', name='MyAgent', pos=[0, 0])
-        api_node = self.graph.create_node('agentric.APINode', name='GeminiAPI', pos=[300, 0])
+        self.graph.create_node('agentric.AgentNode', name='MyAgent', pos=[0, 0])
+        self.graph.create_node('agentric.APINode', name='GeminiAPI', pos=[300, 0])
+
     def setup_expert_graph(self):
         self.graph.clear()
         # The expert level can start with an empty graph, or you can add some
         # basic nodes if you prefer.
-        agent_node = self.graph.create_node('agentric.AgentNode', name='MyAgent', pos=[0, 0])
-        api_node = self.graph.create_node('agentric.APINode', name='GeminiAPI', pos=[300, 0])
+        self.graph.create_node('agentric.AgentNode', name='MyAgent', pos=[0, 0])
+        self.graph.create_node('agentric.APINode', name='GeminiAPI', pos=[300, 0])
 
     def check_for_updates_and_kill_switch(self):
         latest_version, update_url, blacklist = check_for_updates(self.installation_id)
@@ -207,10 +212,10 @@ class MainWindow(QMainWindow):
             return
 
         if blacklist is True:
-             QMessageBox.critical(self, "Application Disabled",
+            QMessageBox.critical(self, "Application Disabled",
                                  "This installation of AgentricGUI has been disabled due to a violation of the Terms of Service. "
                                  "Please contact support for more information.")
-             sys.exit() #Exit program
+            sys.exit()  # Exit program
 
         current_version = "0.0.1"  # Replace with your actual versioning scheme
         if latest_version > current_version:
@@ -219,7 +224,7 @@ class MainWindow(QMainWindow):
             msg_box.setText(f"A new version ({latest_version}) is available.  Do you want to update?")
             msg_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
             msg_box.setDefaultButton(QMessageBox.Yes)
-            msg_box.setDetailedText(f"Update URL: {update_url}") #Show details with URL
+            msg_box.setDetailedText(f"Update URL: {update_url}")  # Show details with URL
 
             if msg_box.exec_() == QMessageBox.Yes:
                 # Open the update URL in the user's default web browser

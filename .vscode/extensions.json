@@ -1,6 +1,7 @@
 {
     "recommendations": [
         "lxt.code-assistant-llm",
-        "blackboxapp.blackbox"
+        "blackboxapp.blackbox",
+        "blackboxapp.blackboxagent"
     ]
 }
