@@ -5,8 +5,7 @@ import logging
 
 # Create a logger
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)  # Set to DEBUG for detailed logging
-
+logger.setLevel(logging.INFO)  # Set to INFO to avoid logging sensitive information
 
 # Create a file handler and a stream handler
 file_handler = logging.FileHandler('gemini_assistant.log')
@@ -34,6 +33,7 @@ def call_gemini_assistant(prompt, node_graph=None):
         The text of the assistant's response.
     """
     response_text = ""
+
     try:
         # --- Node-based commands ---
         if node_graph:
@@ -47,9 +47,8 @@ def call_gemini_assistant(prompt, node_graph=None):
                     properties_formatted = "\n".join(
                         f"  {key}: {value}" for key, value in properties.items()
                     )
-response_text = (f"Node '{node_name}' ({node.type_}) has the following properties:\n"
-                  f"{properties_formatted}")  # Line length adjusted
-
+                    response_text = (f"Node '{node_name}' ({node.type_}) has the following properties:\n"
+                                     f"{properties_formatted}")  # Line length adjusted
                 else:
                     response_text = f"Error: No node found with name '{node_name}'."
 
@@ -124,6 +123,8 @@ response_text = (f"Node '{node_name}' ({node.type_}) has the following propertie
     except requests.exceptions.RequestException as e:
         logger.error(f'Update/blacklist check error: {e}')  # Log the error
         return None, None, False
+
     except Exception as e:
         logger.error(f'An unexpected error occurred: {e}')
         return None, None, False
+</create_file>

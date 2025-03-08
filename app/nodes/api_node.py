@@ -1,7 +1,9 @@
+
 from app.nodes.base_node import BaseNode
 import requests
 import json
 from PyQt5.QtWidgets import QPushButton
+
 
 class APINode(BaseNode):
     NODE_NAME = 'API'
@@ -21,33 +23,28 @@ class APINode(BaseNode):
         # Add a text output to show results
         self.add_text_output('output_text', 'Result', text="")
 
-
-
     def call_api(self):
         # Get the API key from the settings (using the main window)
         main_window = self.graph.window()  # Access the main window
         api_key = main_window.api_key_input.text()
 
-
         if not api_key:
-            self.set_property('output_text', ""Error: API Key not set in settings."")
+            self.set_property('output_text', "Error: API Key not set in settings.")
             return
 
-        url = ""https://generativelanguage.googleapis.com/v1beta/models?key="" + api_key
+        url = "https://generativelanguage.googleapis.com/v1beta/models?key=" + api_key
 
         try:
             response = requests.get(url)
             response.raise_for_status()  # Raise an exception for bad status codes
 
             data = response.json()
-            # self.set_property('output_text', json.dumps(data, indent=2)) #Too Long
             model_names = [model['name'] for model in data['models']]
-            self.set_property('output_text', ""Models:\n"" + '\n'.join(model_names))
-
+            self.set_property('output_text', "Models:\n" + '\n'.join(model_names))  # Line length adjusted
 
         except requests.exceptions.RequestException as e:
-            self.set_property('output_text', f""Error: {e}"")
+            self.set_property('output_text', f"Error: {e}")  # Line length adjusted
         except json.JSONDecodeError as e:
-            self.set_property('output_text', f""Error decoding JSON: {e}"")
+            self.set_property('output_text', f"Error decoding JSON: {e}")  # Line length adjusted
         except Exception as e:
-            self.set_property('output_text', f""An unexpected error occurred: {e}"")
+            self.set_property('output_text', f"An unexpected error occurred: {e}")  # Line length adjusted
