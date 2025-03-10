@@ -53,7 +53,8 @@
 			"extensions": [
 				"lxt.code-assistant-llm",
 				"Blackboxapp.blackbox",
-				"Blackboxapp.blackboxagent"
+				"Blackboxapp.blackboxagent",
+				"Sixth.sixth-ai"
 			]
 		}
 	}
