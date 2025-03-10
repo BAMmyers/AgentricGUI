@@ -4,6 +4,7 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+        
         {
             "name": "Python Debugger: Current File",
             "type": "debugpy",
@@ -12,7 +13,6 @@
             "console": "integratedTerminal"
         },
         {
-<<<<<<< HEAD
             "name": "(gdb) Launch",
             "type": "cppdbg",
             "request": "launch",
@@ -55,10 +55,6 @@
         {
             "name": "Python: Current File",
             "type": "debugpy",
-=======
-            "name": "Python: Current File",
-            "type": "python",
->>>>>>> edccf515355e083cf8e7486902e236e610f226c6
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal"
