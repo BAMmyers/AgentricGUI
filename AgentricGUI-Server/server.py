@@ -74,3 +74,7 @@ def gemini_proxy():
     except Exception as e:
         logging.exception(f""Unexpected Error: {e} - from installation_id: {installation_id}"")  # Log the exception with traceback
         return jsonify({'error': str(e), 'status': 'error'}), 500
+
+@app.route('/test', methods=['GET'])
+def test_deploy():
+    return jsonify({'message': 'Deployment successful', 'status': 'success'})
