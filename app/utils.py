@@ -1,130 +1,77 @@
 import requests
 import json
-import re
 import logging
 
-# Create a logger
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)  # Set to INFO to avoid logging sensitive information
 
-# Create a file handler and a stream handler
-file_handler = logging.FileHandler('gemini_assistant.log')
-stream_handler = logging.StreamHandler()
-
-# Create a formatter and add it to the handlers
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-file_handler.setFormatter(formatter)
-stream_handler.setFormatter(formatter)
-
-# Add the handlers to the logger
-logger.addHandler(file_handler)
-logger.addHandler(stream_handler)
-
-def call_gemini_assistant(prompt, node_graph=None):
+def call_gemini_assistant(prompt: str, graph=None) -> str:
     """
-    Sends a prompt to the local Gemini proxy server, potentially with context
-    from the node graph, and returns the response.
-
+    Call the Gemini API with a prompt.
+    
     Args:
-        prompt: The text prompt.
-        node_graph: The NodeGraphQt.NodeGraph object (optional).
-
+        prompt (str): The user's input prompt
+        graph: Optional node graph reference
+        
     Returns:
-        The text of the assistant's response.
+        str: The assistant's response
     """
-    response_text = ""
-
     try:
-        # --- Node-based commands ---
-        if node_graph:
-            # Explain Node Command
-            match = re.match(r'explain node (.+)', prompt, re.IGNORECASE)
-            if match:
-                node_name = match.group(1).strip()
-                node = node_graph.get_node_by_name(node_name)
-                if node:
-                    properties = node.properties()
-                    properties_formatted = "\n".join(
-                        f"  {key}: {value}" for key, value in properties.items()
-                    )
-                    response_text = (f"Node '{node_name}' ({node.type_}) has the following properties:\n"
-                                     f"{properties_formatted}")  # Line length adjusted
-                else:
-                    response_text = f"Error: No node found with name '{node_name}'."
+        # Get API key from main window if graph is provided
+        api_key = None
+        if graph and hasattr(graph, 'window'):
+            main_window = graph.window()
+            if hasattr(main_window, 'api_key_input'):
+                api_key = main_window.api_key_input.text()
 
-            # Change Node Property Command
-            match = re.match(r'change (.+?) property (.+?) to (.+)', prompt, re.IGNORECASE)
-            if match:
-                node_name = match.group(1).strip()
-                property_name = match.group(2).strip()
-                new_value = match.group(3).strip()
-                node = node_graph.get_node_by_name(node_name)
+        if not api_key:
+            return "Error: API key not set in settings"
 
-                if node:
-                    try:
-                        if property_name not in node.properties():
-                            response_text = (f"Error: Node '{node_name}' does not have property "
-                                              f"'{property_name}'.")
-                        else:
-                            current_value = node.get_property(property_name)
-                            if isinstance(current_value, bool):
-                                new_value = new_value.lower() == 'true'
-                            elif isinstance(current_value, int):
-                                new_value = int(new_value)
-                            elif isinstance(current_value, float):
-                                new_value = float(new_value)
-
-                            node.set_property(property_name, new_value)
-                            response_text = (f"Successfully changed property '{property_name}' of "
-                                             f"node '{node_name}' to '{new_value}'.")
-                    except Exception as e:
-                        response_text = f"Error changing property: {e}"
-                else:
-                    response_text = f"Error: No node found with name '{node_name}'."
-
-            # List Nodes
-            match = re.match(r'list nodes', prompt, re.IGNORECASE)
-            if match:
-                nodes = node_graph.all_nodes()
-                node_names = [node.name() for node in nodes]
-                response_text = "Nodes:\n" + '\n'.join(node_names)
-
-        if response_text:
-            return response_text
-
-        # --- Call Local Server ---
-        main_window = node_graph.window()
-        installation_id = main_window.installation_id
-        url = "http://localhost:5000/gemini"  # URL of your local server
-
-        headers = {'Content-Type': 'application/json'}
-        data = {
-            'prompt': prompt,
-            'installation_id': installation_id  # Include installation ID
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={api_key}"
+        
+        payload = {
+            "contents": [{
+                "parts": [{
+                    "text": prompt
+                }]
+            }]
         }
 
-        response = requests.post(url, headers=headers, data=json.dumps(data))
-        response.raise_for_status()  # Raise an exception for bad status codes
-        logger.info(f"API call successful: {url}")  # Log successful API call
-
-        response_json = response.json()
-
-        if "error" in response_json:  # Check for gemini errors coming through server
-            return f"Error from Gemini API: {response_json['error']}"  # Error handling
-
-        if 'candidates' in response_json and response_json['candidates']:
-            if 'content' in response_json['candidates'][0] and response_json['candidates'][0]['content']['parts']:
-                return response_json['candidates'][0]['content']['parts'][0]['text']
-            else:
-                return "Error: Could not find the response text."
-        else:
-            return "Error: Could not find candidates in the response."
+        response = requests.post(url, json=payload)
+        response.raise_for_status()
+        
+        data = response.json()
+        
+        # Extract the response text from Gemini's response
+        if 'candidates' in data and len(data['candidates']) > 0:
+            candidate = data['candidates'][0]
+            if 'content' in candidate and 'parts' in candidate['content']:
+                parts = candidate['content']['parts']
+                if len(parts) > 0 and 'text' in parts[0]:
+                    return parts[0]['text']
+        
+        return "No valid response received from Gemini"
 
     except requests.exceptions.RequestException as e:
-        logger.error(f'Update/blacklist check error: {e}')  # Log the error
-        return None, None, False
-
+        logger.error(f"API request failed: {str(e)}")
+        return f"Error making API request: {str(e)}"
     except Exception as e:
-        logger.error(f'An unexpected error occurred: {e}')
-        return None, None, False
-</create_file>
+        logger.error(f"Error in call_gemini_assistant: {str(e)}")
+        return f"Error: {str(e)}"
+
+def check_for_updates(installation_id: str) -> tuple:
+    """
+    Check for updates and verify installation status.
+    
+    Args:
+        installation_id (str): Unique identifier for this installation
+        
+    Returns:
+        tuple: (latest_version, update_url, blacklist_status)
+    """
+    try:
+        # For now, return dummy values
+        # In production, this would make an actual API call to check updates
+        return ("0.0.1", "https://github.com/BAMmyers/AgentricGUI/releases", False)
+    except Exception as e:
+        logger.error(f"Error checking for updates: {str(e)}")
+        return (None, None, False)

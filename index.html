@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AgentricGUI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        .node {
+            background: white;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            padding: 10px;
+            position: absolute;
+            min-width: 150px;
+            cursor: move;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .node-port {
+            width: 12px;
+            height: 12px;
+            background: #3498db;
+            border-radius: 50%;
+            position: absolute;
+            cursor: pointer;
+        }
+        .node-port.input {
+            left: -6px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .node-port.output {
+            right: -6px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div id="app" class="min-h-screen p-4">
+        <!-- Login Modal -->
+        <div v-if="!isLoggedIn" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+            <div class="bg-white p-8 rounded-lg shadow-lg w-96">
+                <h2 class="text-2xl font-bold mb-6 text-center">Welcome to AgentricGUI</h2>
+                <div class="space-y-4">
+                    <input v-model="username" type="text" placeholder="Username" 
+                           class="w-full p-2 border rounded">
+                    <input v-model="password" type="password" placeholder="Password"
+                           class="w-full p-2 border rounded">
+                    <button @click="login" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
+                        Login
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Interface -->
+        <div v-else>
+            <div class="bg-white p-4 rounded shadow mb-4">
+                <h1 class="text-2xl font-bold">Node Editor</h1>
+            </div>
+
+            <!-- Node Canvas -->
+            <div class="bg-white p-4 rounded shadow relative h-[600px]" ref="canvas">
+                <div v-for="node in nodes" 
+                     :key="node.id"
+                     :style="{ left: node.x + 'px', top: node.y + 'px' }"
+                     class="node"
+                     @mousedown="startDragging(node, $event)">
+                    <div class="font-bold">{{ node.name }}</div>
+                    <div class="node-port input"></div>
+                    <div class="node-port output"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    isLoggedIn: false,
+                    username: '',
+                    password: '',
+                    nodes: {{ initial_nodes|tojson|safe }},
+                    connections: {{ initial_connections|tojson|safe }},
+                    settings: {{ initial_settings|tojson|safe }},
+                    draggedNode: null,
+                    dragOffset: { x: 0, y: 0 }
+                }
+            },
+            methods: {
+                login() {
+                    if (this.username && this.password) {
+                        this.isLoggedIn = true;
+                    }
+                },
+                startDragging(node, event) {
+                    this.draggedNode = node;
+                    const rect = event.target.getBoundingClientRect();
+                    this.dragOffset = {
+                        x: event.clientX - rect.left,
+                        y: event.clientY - rect.top
+                    };
+                    document.addEventListener('mousemove', this.onDrag);
+                    document.addEventListener('mouseup', this.stopDragging);
+                },
+                onDrag(event) {
+                    if (this.draggedNode) {
+                        this.draggedNode.x = event.clientX - this.dragOffset.x;
+                        this.draggedNode.y = event.clientY - this.dragOffset.y;
+                    }
+                },
+                stopDragging() {
+                    this.draggedNode = null;
+                    document.removeEventListener('mousemove', this.onDrag);
+                    document.removeEventListener('mouseup', this.stopDragging);
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
