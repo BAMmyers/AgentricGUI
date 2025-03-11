@@ -110,3 +110,6 @@ class FlowEngine:
                     self.logger.error(f"Node {node.name()} missing required input connection on port {port.name()}")
                     return False
         return True
+
+# Author: Brandon Myers
+# GitHub: https://github.com/BAMmyers/AgentricGUI.git

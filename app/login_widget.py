@@ -1,7 +1,9 @@
 from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
-                            QLineEdit, QPushButton, QMessageBox)
+                            QLineEdit, QPushButton, QMessageBox, QInputDialog)
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont, QIcon
+import sqlite3
+import hashlib
 
 class LoginWidget(QDialog):
     def __init__(self, parent=None):
@@ -60,7 +62,7 @@ class LoginWidget(QDialog):
 
     def apply_styles(self):
         # Modern flat style
-        self.setStyleSheet("""
+        self.setStyleSheet(""" 
             QDialog {
                 background-color: #ffffff;
             }
@@ -92,7 +94,6 @@ class LoginWidget(QDialog):
             QPushButton:pressed {
                 background-color: #2475a8;
             }
-            #register_btn, #forgot_btn {
                 background-color: #95a5a6;
             }
             #register_btn:hover, #forgot_btn:hover {
@@ -109,14 +110,77 @@ class LoginWidget(QDialog):
                               "Please enter both username and password.")
             return
 
-        # TODO: Implement actual authentication
-        # For now, accept any non-empty credentials
-        self.accept()
+        hashed_password = self.hash_password(password)
+
+        if self.authenticate_user(username, hashed_password):
+            self.accept()
+        else:
+            QMessageBox.warning(self, "Login Error", 
+                              "Invalid username or password.")
+
+    def hash_password(self, password):
+        return hashlib.sha256(password.encode()).hexdigest()
+
+    def authenticate_user(self, username, hashed_password):
+        conn = sqlite3.connect('users.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE username=? AND password=?", (username, hashed_password))
+        user = cursor.fetchone()
+        conn.close()
+        return user is not None
 
     def handle_register(self):
-        QMessageBox.information(self, "Register", 
-                              "Registration feature coming soon!")
+        username, ok1 = QInputDialog.getText(self, "Register", "Enter username:")
+        if not ok1 or not username:
+            return
+
+        password, ok2 = QInputDialog.getText(self, "Register", "Enter password:", QLineEdit.Password)
+        if not ok2 or not password:
+            return
+
+        hashed_password = self.hash_password(password)
+
+        if self.save_user_credentials(username, hashed_password):
+            QMessageBox.information(self, "Register", "Registration successful!")
+        else:
+            QMessageBox.warning(self, "Register Error", "Username already exists.")
 
     def handle_forgot_password(self):
-        QMessageBox.information(self, "Password Recovery", 
-                              "Password recovery feature coming soon!")
+        username, ok = QInputDialog.getText(self, "Password Recovery", "Enter username:")
+        if not ok or not username:
+            return
+
+        new_password, ok = QInputDialog.getText(self, "Password Recovery", "Enter new password:", QLineEdit.Password)
+        if not ok or not new_password:
+            return
+
+        hashed_password = self.hash_password(new_password)
+
+        if self.update_user_password(username, hashed_password):
+            QMessageBox.information(self, "Password Recovery", "Password updated successfully!")
+        else:
+            QMessageBox.warning(self, "Password Recovery Error", "Username not found.")
+
+    def save_user_credentials(self, username, hashed_password):
+        conn = sqlite3.connect('users.db')
+        cursor = conn.cursor()
+        try:
+            cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, hashed_password))
+            conn.commit()
+            return True
+        except sqlite3.IntegrityError:
+            return False
+        finally:
+            conn.close()
+
+    def update_user_password(self, username, hashed_password):
+        conn = sqlite3.connect('users.db')
+        cursor = conn.cursor()
+        cursor.execute("UPDATE users SET password=? WHERE username=?", (hashed_password, username))
+        conn.commit()
+        updated = cursor.rowcount > 0
+        conn.close()
+        return updated
+
+# Author: Brandon Myers
+# GitHub: https://github.com/BAMmyers/AgentricGUI.git
