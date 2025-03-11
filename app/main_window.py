@@ -1,7 +1,8 @@
 from PyQt5.QtWidgets import (QMainWindow, QTabWidget, QWidget, QVBoxLayout,
                              QLabel, QPushButton, QLineEdit, QFileDialog,
-                             QFormLayout, QTextEdit, QDockWidget,
+                             QFormLayout, QTextEdit, QDockWidget, QHBoxLayout,
                              QComboBox, QMessageBox)
+import logging
 from PyQt5.QtCore import Qt
 from NodeGraphQt import NodeGraph, setup_context_menu
 from app.nodes.agent_node import AgentNode
@@ -41,6 +42,56 @@ class MainWindow(QMainWindow):
         self.create_tab_layout = QVBoxLayout(self.create_tab)
         self.create_tab_layout.setContentsMargins(0, 0, 0, 0)
 
+        # Add toolbar for flow control
+        toolbar = QWidget()
+        toolbar_layout = QHBoxLayout(toolbar)
+        toolbar_layout.setContentsMargins(10, 10, 10, 10)
+        
+        # Run flow button
+        self.run_flow_btn = QPushButton("Run Flow")
+        self.run_flow_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #2ecc71;
+                color: white;
+                border: none;
+                padding: 8px 15px;
+                border-radius: 4px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #27ae60;
+            }
+            QPushButton:pressed {
+                background-color: #219a52;
+            }
+        """)
+        self.run_flow_btn.clicked.connect(self.execute_flow)
+        toolbar_layout.addWidget(self.run_flow_btn)
+        
+        # Reset flow button
+        self.reset_flow_btn = QPushButton("Reset")
+        self.reset_flow_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #e74c3c;
+                color: white;
+                border: none;
+                padding: 8px 15px;
+                border-radius: 4px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #c0392b;
+            }
+            QPushButton:pressed {
+                background-color: #a93226;
+            }
+        """)
+        self.reset_flow_btn.clicked.connect(self.reset_flow)
+        toolbar_layout.addWidget(self.reset_flow_btn)
+        
+        toolbar_layout.addStretch()
+        self.create_tab_layout.addWidget(toolbar)
+
         # Create the node graph
         self.graph = NodeGraph()
         self.graph_widget = self.graph.widget
@@ -51,11 +102,47 @@ class MainWindow(QMainWindow):
         self.graph.register_node(AgentNode)
         self.graph.register_node(APINode)
         self.graph.register_node(BaseNode)
+        
+        # Initialize flow engine
+        from app.flow_engine import FlowEngine
+        self.flow_engine = FlowEngine(self.graph)
 
         # --- Console Tab Setup ---
         self.console_tab_layout = QVBoxLayout(self.console_tab)
-        self.console_label = QLabel("Console Output Will Appear Here")
-        self.console_tab_layout.addWidget(self.console_label)
+        
+        # Add console output
+        self.console_output = QTextEdit()
+        self.console_output.setReadOnly(True)
+        self.console_output.setStyleSheet("""
+            QTextEdit {
+                background-color: #2c3e50;
+                color: #ecf0f1;
+                font-family: monospace;
+                padding: 10px;
+                border: none;
+            }
+        """)
+        self.console_tab_layout.addWidget(self.console_output)
+        
+        # Setup logging to console
+        logging.basicConfig(level=logging.INFO)
+        self.logger = logging.getLogger('AgentricGUI')
+        
+        # Custom handler to redirect logs to console widget
+        class QTextEditHandler(logging.Handler):
+            def __init__(self, widget):
+                super().__init__()
+                self.widget = widget
+
+            def emit(self, record):
+                msg = self.format(record)
+                self.widget.append(msg)
+        
+        console_handler = QTextEditHandler(self.console_output)
+        console_handler.setFormatter(
+            logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        )
+        self.logger.addHandler(console_handler)
 
         # --- Settings Tab Setup ---
         self.settings_tab_layout = QFormLayout(self.settings_tab)
@@ -104,10 +191,62 @@ class MainWindow(QMainWindow):
 
         self.update_ui_for_experience_level()
         self.setup_initial_nodes()
+        
+        # Log startup complete
+        self.logger.info("AgentricGUI initialized successfully")
 
     def setup_initial_nodes(self):
-        self.graph.create_node('agentric.AgentNode', name='MyAgent', pos=[0, 0])
-        self.graph.create_node('agentric.APINode', name='GeminiAPI', pos=[300, 0])
+        """Create initial nodes in the graph."""
+        try:
+            # Create an agent node
+            agent_node = self.graph.create_node(
+                'agentric.AgentNode',
+                name='MyAgent',
+                pos=[0, 0]
+            )
+            
+            # Create an API node
+            api_node = self.graph.create_node(
+                'agentric.APINode',
+                name='GeminiAPI',
+                pos=[300, 0]
+            )
+            
+            self.logger.info("Initial nodes created successfully")
+            
+        except Exception as e:
+            self.logger.error(f"Error creating initial nodes: {str(e)}")
+
+    def execute_flow(self):
+        """Execute the current node graph flow."""
+        try:
+            self.logger.info("Starting flow execution...")
+            self.console_output.clear()
+            
+            # Validate connections
+            if not self.flow_engine.validate_connections():
+                self.logger.error("Flow validation failed - check node connections")
+                return
+            
+            # Run the flow
+            success = self.flow_engine.run_flow()
+            
+            if success:
+                self.logger.info("Flow execution completed successfully")
+            else:
+                self.logger.error("Flow execution failed - check console for details")
+                
+        except Exception as e:
+            self.logger.error(f"Error executing flow: {str(e)}")
+
+    def reset_flow(self):
+        """Reset the flow state of all nodes."""
+        try:
+            self.flow_engine.reset_flow()
+            self.console_output.clear()
+            self.logger.info("Flow reset complete")
+        except Exception as e:
+            self.logger.error(f"Error resetting flow: {str(e)}")
 
     def save_settings(self):
         settings = {
