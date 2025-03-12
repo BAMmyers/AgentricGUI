@@ -1,7 +1,5 @@
 from flask import Flask, render_template, jsonify, request
 import logging
-import json
-import os
 
 app = Flask(__name__)
 
@@ -27,7 +25,6 @@ settings = DEFAULT_SETTINGS.copy()
 
 @app.route('/')
 def index():
-    # Fix the template data passing
     return render_template('index.html', nodes=nodes, connections=connections, settings=settings)
 
 @app.route('/api/execute_flow', methods=['POST'])
@@ -61,8 +58,8 @@ def save_settings():
         logger.error(f"Error saving settings: {str(e)}")
         return jsonify({
             'success': False,
-            'error': str(e)
-        }), 500
+            'error': str(e)}
+        ), 500
 
 @app.route('/api/load_settings', methods=['GET'])
 def load_settings():
@@ -72,7 +69,7 @@ def load_settings():
         logger.error(f"Error loading settings: {str(e)}")
         return jsonify({
             'success': False,
-            'error': str(e)
-        }), 500
+            'error': str(e)}
+        ), 500
 
-    app.run(host='0.0.0.0', port=8000, debug=True)
+app.run(host='0.0.0.0', port=8000, debug=True)
