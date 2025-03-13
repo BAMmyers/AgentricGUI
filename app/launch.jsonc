@@ -1,38 +1,7 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
         {
-<<<<<<< HEAD
-            "name": "(gdb) Launch",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "enter program name, for example ${workspaceFolder}/a.exe",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${fileDirname}",
-            "environment": [],
-            "externalConsole": false,
-            "MIMode": "gdb",
-            "miDebuggerPath": "/path/to/gdb",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                },
-                {
-                    "description": "Set Disassembly Flavor to Intel",
-                    "text": "-gdb-set disassembly-flavor intel",
-                    "ignoreFailures": true
-                }
-            ]
-        },
-        {
-=======
->>>>>>> 9c998c565ec4992453ed85ed82bce53bcc6e69fb
             "name": "Python Debugger: Current File",
             "type": "debugpy",
             "request": "launch",
@@ -88,15 +57,8 @@
         },
         {
             "name": "Python: Attach",
-<<<<<<< HEAD
-            "type": "python",
-            "request": "attach",
-            "port": 5678,
-            "host": "localhost"
-=======
             "type": "debugpy",
             "request": "attach"
->>>>>>> 9c998c565ec4992453ed85ed82bce53bcc6e69fb
         },
         {
             "name": "RobotCode: Run Robot Tests",
@@ -110,27 +72,11 @@
             "type": "robotcode",
             "request": "launch",
             "cwd": "${workspaceFolder}",
-<<<<<<< HEAD
-            "target": "${file}",
-            "debug": true
-        },
-        {
-            "name": "RobotCode: Run All",
-            "type": "robotcode",
-            "request": "launch",
-            "cwd": "${workspaceFolder}",
-            "target": "."
-        },
-        {
-            "name": "Python: Django",
-            "type": "python",
-=======
             "target": "${file}"
         },
         {
             "name": "Python: Django",
             "type": "debugpy",
->>>>>>> 9c998c565ec4992453ed85ed82bce53bcc6e69fb
             "request": "launch",
             "program": "${workspaceFolder}/manage.py",
             "args": [
@@ -141,11 +87,7 @@
         },
         {
             "name": "Deploy Application",
-<<<<<<< HEAD
-            "type": "python",
-=======
             "type": "debugpy",
->>>>>>> 9c998c565ec4992453ed85ed82bce53bcc6e69fb
             "request": "launch",
             "program": "${workspaceFolder}/deploy.py",
             "console": "integratedTerminal"
