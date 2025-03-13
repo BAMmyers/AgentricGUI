@@ -12,9 +12,17 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Load your Gemini API key from an environment variable
+<<<<<<< HEAD
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")  # Set this in environment
 if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY environment variable not set.")
+=======
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY") # Set this in environment
+if not GEMINI_API_KEY:
+    raise ValueError("GEMINI_API_KEY environment variable not set.")
+
+GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" + GEMINI_API_KEY
+>>>>>>> 952de308da38fa4fb748d26eb0de3d3149609dc9
 
 GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" + GEMINI_API_KEY
 
@@ -62,6 +70,11 @@ def gemini_proxy():
 
         # --- Logging ---
         logging.info(f"Request from {installation_id}: prompt='{prompt[:50]}...' - Success")  # Log a truncated prompt
+<<<<<<< HEAD
+=======
+
+        return jsonify({'data': response_json, 'status': 'success'}) #Return with status
+>>>>>>> 952de308da38fa4fb748d26eb0de3d3149609dc9
 
         return jsonify({'data': response_json, 'status': 'success'})  # Return with status
 
